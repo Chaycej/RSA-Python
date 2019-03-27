@@ -46,21 +46,37 @@ def primality(n, a):
     return 0
 
 def key_generation():
+    if os.path.isfile("./pubkey.txt"):
+        print("There is already a public and private key generated")
+        print("To generate new keys, delete the public/private key files")
+        return
+
     seed = input("Type a number to use as a seed: ")
     seed = int(seed)
 
     random.seed(seed)
-    pub_key = None
+    prime = None
 
-    while pub_key is None:
+    while prime is None:
         randnum = random.randint(1000000, 1000000000)
         if miller_rabin(randnum, 25) == 1:
             if randnum % 12 == 5 and miller_rabin((randnum * 2) + 1, 25) == 1:
-                pub_key = randnum
+                prime = randnum
 
-    priv_key = random.randint(1, pub_key-1)
+    priv_key = random.randint(1, prime-1)
     g = 2
-    e2 = pow(g, priv_key, pub_key)
+    e2 = pow(g, priv_key, prime)
+
+    pubk_file = open("pubkey.txt", "w")
+    privk_file = open("prikey.txt", "w")
+    pubk_file.write("{prime} {g} {e2}".format(prime=prime, g=g, e2=e2))
+    privk_file.write("{prime} {g} {priv_key}".format(prime=prime, g=g, priv_key=priv_key))
+
+def encrypt():
+    pubk_file = open("pubkey.txt")
+    p, g, e2 = pubk_file.read().split(" ")
+    p, g, e2 = int(p), int(g), int(e2)
+    print("pubkey is", p, g, e2)
 
 def main():
     print("k : key generation")
@@ -70,6 +86,11 @@ def main():
 
     if mode == "k":
         key_generation()
+    elif mode == "e":
+        if os.path.isfile("./ptext.txt") == False:
+            print("no ptext.txt file found")
+            return
+        encrypt()
 
 
 if __name__ == "__main__":
