@@ -76,7 +76,19 @@ def encrypt():
     pubk_file = open("pubkey.txt")
     p, g, e2 = pubk_file.read().split(" ")
     p, g, e2 = int(p), int(g), int(e2)
-    print("pubkey is", p, g, e2)
+
+    text_file = open("ptext.txt", "r")
+    output_file = open("ctext.txt", "w")
+    content = text_file.read()
+    for c in content:
+        k = random.randint(1, p-1)
+        c1 = pow(g, k, p)
+        c2 = (pow(e2, k, p) * (ord(c) % p)) % p
+        output_file.write("{c1} {c2}".format(c1=c1, c2=c2))
+
+def decrypt():
+
+
 
 def main():
     print("k : key generation")
@@ -90,7 +102,18 @@ def main():
         if os.path.isfile("./ptext.txt") == False:
             print("no ptext.txt file found")
             return
+
+        if os.path.isfile("./ctext.txt"):
+            print("Cannot encrypt. An encrypted file already exists.")
+            print("Delete ctext.txt to encrypt")
+            return
         encrypt()
+
+    elif mode == "d":
+        if os.path.isfile("./ctext.txt") == False:
+            print("Cannot decrypt. Need an encrypted file")
+            return
+        decrypt()
 
 
 if __name__ == "__main__":
