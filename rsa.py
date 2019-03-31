@@ -67,8 +67,8 @@ def primality(n, a):
         count -= 1
     return 0
 
-def key_generation():
-    if os.path.isfile("./pubkey.txt"):
+def key_generation(public_path, private_path):
+    if os.path.isfile(public_path):
         print("There is already a public and private key generated")
         print("To generate new keys, delete the public/private key files")
         return
@@ -88,18 +88,18 @@ def key_generation():
     g = 2
     e2 = modexp(g, priv_key, prime)
 
-    pubk_file = open("pubkey.txt", "w")
-    privk_file = open("prikey.txt", "w")
+    pubk_file = open(public_path, "w")
+    privk_file = open(private_path, "w")
     pubk_file.write("{prime} {g} {e2}".format(prime=prime, g=g, e2=e2))
     privk_file.write("{prime} {g} {priv_key}".format(prime=prime, g=g, priv_key=priv_key))
 
-def encrypt():
-    pubk_file = open("pubkey.txt", "r")
+def encrypt(plaintext_path, output_path, pubkey_path):
+    pubk_file = open(pubkey_path, "r")
     p, g, e2 = pubk_file.read().split(" ")
     p, g, e2 = int(p), int(g), int(e2)
 
-    text_file = open("ptext.txt", "r")
-    output_file = open("ctext.txt", "w")
+    text_file = open(plaintext_path, "r")
+    output_file = open(output_path, "w")
     content = text_file.read()
     for c in content:
         k = random.randint(1, p-1)
@@ -108,12 +108,12 @@ def encrypt():
         print("c1, c2 = ", c1, c2)
         output_file.write("{c1} {c2} ".format(c1=c1, c2=c2))
 
-def decrypt():
-    privk_file = open("prikey.txt", "r")
+def decrypt(encrypted_path, output_path, privkey_path):
+    privk_file = open(privkey_path, "r")
     p, g, d = privk_file.read().split(" ")
     p, g, d = int(p), int(g), int(d)
-    crypt_file = open("ctext.txt", "r")
-    output_file = open("dtext.txt", "w")
+    crypt_file = open(encrypted_path, "r")
+    output_file = open(output_path, "w")
     content = crypt_file.read().split(" ")
 
     index = 0
@@ -129,29 +129,65 @@ def decrypt():
     output_file.write(retstr)
 
 def main():
-    print("k : key generation")
-    print("e : encryption")
-    print("d : decryption")
-    mode = input("Choose a mode: ")
 
+    if len(sys.argv) < 2:
+        print("Must specify an rsa mode")
+        print("k - key generation")
+        print("e - encryption")
+        print("d - decryption")
+        return
+
+    mode = sys.argv[1]
+
+    # Key generation mode
     if mode == "k":
-        key_generation()
+
+        if len(sys.argv) < 4:
+            print("Must specify the file paths of the public and private keys")
+            print("python3 rsa.py k <public key> <private key>")
+            return
+
+        key_generation(sys.argv[2], sys.argv[3])
+
+    # Encryption mode
     elif mode == "e":
+
+        if len(sys.argv) < 5:
+            print("Invalid command arguments")
+            print("python3 rsa.py e <plaintext file> <output file>\
+                 <public key file>")
+
         if os.path.isfile("./ptext.txt") == False:
-            print("no ptext.txt file found")
+            print("No plaintext file found for:", sys.argv[2])
             return
 
-        if os.path.isfile("./ctext.txt"):
-            print("Cannot encrypt. An encrypted file already exists.")
-            print("Delete ctext.txt to encrypt")
+        if os.path.isfile(sys.argv[3]):
+            print("Cannot encrypt. An encrypted file already exists")
+            print("Delete", sys.argv[3], " to encrypt")
             return
-        encrypt()
 
+        if os.path.isfile(sys.argv[4]) == False:
+            print("Invalid public key path")
+            return
+        
+        encrypt(sys.argv[2], sys.argv[3], sys.argv[4])
+
+    # Decryption mode
     elif mode == "d":
-        if os.path.isfile("./ctext.txt") == False:
-            print("Cannot decrypt. Need an encrypted file")
+
+        if len(sys.argv) < 5:
+            print("Invalid command arguments")
+            print("python3 rsa.py d <encrypted file> <output file> <private key file>")
             return
-        decrypt()
+
+        if os.path.isfile(sys.argv[2]) == False:
+            print("Cannot decrypt. Need a valid encrypted file")
+            return
+
+        if os.path.isfile(sys.argv[4]) == False:
+            print("Invalid private key path")
+        
+        decrypt(sys.argv[2], sys.argv[3], sys.argv[4])
 
 
 if __name__ == "__main__":
