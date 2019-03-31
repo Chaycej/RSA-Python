@@ -154,10 +154,10 @@ def main():
 
         if len(sys.argv) < 5:
             print("Invalid command arguments")
-            print("python3 rsa.py e <plaintext file> <output file>\
-                 <public key file>")
+            print("python3 rsa.py e <plaintext file> <output file> <public key file>")
+            return
 
-        if os.path.isfile("./ptext.txt") == False:
+        if os.path.isfile(sys.argv[2]) == False:
             print("No plaintext file found for:", sys.argv[2])
             return
 
