@@ -3,6 +3,14 @@ import random
 import sys
 
 def modexp(a, b, c):
+
+    def ndigits(n, b):
+        digits = []
+        while n:
+            digits.append(n % b)
+            n = int(n/b)
+        return digits
+
     base = 2 << (4)
 
     table = [1] * base
@@ -10,7 +18,7 @@ def modexp(a, b, c):
         table[i] = table[i-1] * a % c
 
     r = 1
-    digits = digits_of_n(b, base)
+    digits = ndigits(b, base)
     digits = digits[::-1]
 
     for digit in digits:
@@ -20,13 +28,6 @@ def modexp(a, b, c):
         if digit:
             r = r * table[digit] % c
     return r
-
-def digits_of_n(n, b):
-    digits = []
-    while n:
-        digits.append(n % b)
-        n = int(n/b)
-    return digits
 
 def miller_rabin(n, k, witness=None):
 
@@ -186,6 +187,7 @@ def main():
 
         if os.path.isfile(sys.argv[4]) == False:
             print("Invalid private key path")
+            return
         
         decrypt(sys.argv[2], sys.argv[3], sys.argv[4])
 
