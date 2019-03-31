@@ -2,9 +2,31 @@ import os
 import random
 import sys
 
+def modexp(a, b, c):
+    base = 2 << (4)
 
-primes = [7681, 7687, 7691, 7699, 7703, 7717, 7723, 7727, 7741, 7753, 7757, 7759, 7789,
-7793, 7817, 7823, 7829,7841, 7853, 7867, 7873, 7877,7879, 7883, 7901, 7907, 7919]
+    table = [1] * base
+    for i in range(1, base):
+        table[i] = table[i-1] * a % c
+
+    r = 1
+    digits = digits_of_n(b, base)
+    digits = digits[::-1]
+
+    for digit in digits:
+        for i in range(5):
+            r = r * r % c
+        
+        if digit:
+            r = r * table[digit] % c
+    return r
+
+def digits_of_n(n, b):
+    digits = []
+    while n:
+        digits.append(n % b)
+        n = int(n/b)
+    return digits
 
 def miller_rabin(n, k, witness=None):
 
@@ -34,7 +56,7 @@ def primality(n, a):
         num //= 2
         count += 1
     
-    res = pow(a, num, n)
+    res = modexp(a, num, n)
     if res == 1:
         return 1
 
@@ -64,7 +86,7 @@ def key_generation():
 
     priv_key = random.randint(1, prime-1)
     g = 2
-    e2 = pow(g, priv_key, prime)
+    e2 = modexp(g, priv_key, prime)
 
     pubk_file = open("pubkey.txt", "w")
     privk_file = open("prikey.txt", "w")
@@ -81,9 +103,8 @@ def encrypt():
     content = text_file.read()
     for c in content:
         k = random.randint(1, p-1)
-        print("ord c = ", ord(c))
-        c1 = pow(g, k, p)
-        c2 = (pow(e2, k, p) * (ord(c) % p)) % p
+        c1 = modexp(g, k, p)
+        c2 = (modexp(e2, k, p) * (ord(c) % p)) % p
         print("c1, c2 = ", c1, c2)
         output_file.write("{c1} {c2} ".format(c1=c1, c2=c2))
 
@@ -92,15 +113,20 @@ def decrypt():
     p, g, d = privk_file.read().split(" ")
     p, g, d = int(p), int(g), int(d)
     crypt_file = open("ctext.txt", "r")
+    output_file = open("dtext.txt", "w")
     content = crypt_file.read().split(" ")
 
     index = 0
+    retstr = ""
     while index < len(content)-1:
         c1 = int(content[index])
         c2 = int(content[index+1])
-        m = (pow(c1, p-1-d, p) * (c2 % p)) % p
-        print("char is =", chr(m))
+        m = (modexp(c1, p-1-d, p) * (c2 % p)) % p
+        retstr += chr(m)
         index += 2
+
+    print(retstr)
+    output_file.write(retstr)
 
 def main():
     print("k : key generation")
