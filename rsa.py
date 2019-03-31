@@ -51,17 +51,16 @@ def key_generation():
         print("To generate new keys, delete the public/private key files")
         return
 
-    seed = input("Type a number to use as a seed: ")
-    seed = int(seed)
+    seed = int(input("Type a number to use as a seed: "))
 
     random.seed(seed)
     prime = None
 
     while prime is None:
-        randnum = random.randint(1000000, 1000000000)
-        if miller_rabin(randnum, 25) == 1:
-            if randnum % 12 == 5 and miller_rabin((randnum * 2) + 1, 25) == 1:
-                prime = randnum
+        q = random.randint(2**31, 2**32)
+        if miller_rabin(q, 25) == 1:
+            if q % 12 == 5 and miller_rabin((q * 2) + 1, 25) == 1:
+                prime = (q * 2) + 1
 
     priv_key = random.randint(1, prime-1)
     g = 2
@@ -73,7 +72,7 @@ def key_generation():
     privk_file.write("{prime} {g} {priv_key}".format(prime=prime, g=g, priv_key=priv_key))
 
 def encrypt():
-    pubk_file = open("pubkey.txt")
+    pubk_file = open("pubkey.txt", "r")
     p, g, e2 = pubk_file.read().split(" ")
     p, g, e2 = int(p), int(g), int(e2)
 
@@ -82,13 +81,26 @@ def encrypt():
     content = text_file.read()
     for c in content:
         k = random.randint(1, p-1)
+        print("ord c = ", ord(c))
         c1 = pow(g, k, p)
         c2 = (pow(e2, k, p) * (ord(c) % p)) % p
-        output_file.write("{c1} {c2}".format(c1=c1, c2=c2))
+        print("c1, c2 = ", c1, c2)
+        output_file.write("{c1} {c2} ".format(c1=c1, c2=c2))
 
 def decrypt():
+    privk_file = open("prikey.txt", "r")
+    p, g, d = privk_file.read().split(" ")
+    p, g, d = int(p), int(g), int(d)
+    crypt_file = open("ctext.txt", "r")
+    content = crypt_file.read().split(" ")
 
-
+    index = 0
+    while index < len(content)-1:
+        c1 = int(content[index])
+        c2 = int(content[index+1])
+        m = (pow(c1, p-1-d, p) * (c2 % p)) % p
+        print("char is =", chr(m))
+        index += 2
 
 def main():
     print("k : key generation")
