@@ -1,9 +1,9 @@
+import logging
 import os
 import random
 import sys
 
 def modexp(a, b, c):
-
     def ndigits(n, b):
         digits = []
         while n:
@@ -29,7 +29,6 @@ def modexp(a, b, c):
     return r
 
 def miller_rabin(n, k, witness=None):
-
     if n % 2 == 0:
         return 0
 
@@ -78,9 +77,11 @@ def key_generation(public_path, private_path):
     random.seed(seed)
     prime = None
 
+    # Find a prime with a generator of 2
     while prime is None:
         q = random.randint(2**31, 2**32)
         if miller_rabin(q, 25) == 1:
+            logging.debug("Possible prime: %s" % q)
             if q % 12 == 5 and miller_rabin((q * 2) + 1, 25) == 1:
                 prime = (q * 2) + 1
 
@@ -88,6 +89,11 @@ def key_generation(public_path, private_path):
     g = 2
     e2 = modexp(g, priv_key, prime)
 
+    logging.debug("Pubic key prime: %s" % prime)
+    logging.debug("e: %s" % e2)
+    logging.debug("private key: %s" % priv_key)
+
+    # Write the public and private key
     pubk_file = open(public_path, "w")
     privk_file = open(private_path, "w")
     pubk_file.write("{prime} {g} {e2}".format(prime=prime, g=g, e2=e2))
@@ -97,10 +103,10 @@ def encrypt(plaintext_path, output_path, pubkey_path):
     pubk_file = open(pubkey_path, "r")
     p, g, e2 = pubk_file.read().split(" ")
     p, g, e2 = int(p), int(g), int(e2)
-
     text_file = open(plaintext_path, "r")
     output_file = open(output_path, "w")
     content = text_file.read()
+
     for c in content:
         k = random.randint(1, p-1)
         c1 = modexp(g, k, p)
@@ -115,9 +121,9 @@ def decrypt(encrypted_path, output_path, privkey_path):
     crypt_file = open(encrypted_path, "r")
     output_file = open(output_path, "w")
     content = crypt_file.read().split(" ")
-
     index = 0
     retstr = ""
+
     while index < len(content)-1:
         c1 = int(content[index])
         c2 = int(content[index+1])
@@ -129,7 +135,6 @@ def decrypt(encrypted_path, output_path, privkey_path):
     output_file.write(retstr)
 
 def main():
-
     if len(sys.argv) < 2:
         print("Must specify an rsa mode")
         print("k - key generation")
@@ -141,7 +146,6 @@ def main():
 
     # Key generation mode
     if mode == "k":
-
         if len(sys.argv) < 4:
             print("Must specify the file paths of the public and private keys")
             print("python3 rsa.py k <public key> <private key>")
@@ -151,21 +155,17 @@ def main():
 
     # Encryption mode
     elif mode == "e":
-
         if len(sys.argv) < 5:
             print("Invalid command arguments")
             print("python3 rsa.py e <plaintext file> <output file> <public key file>")
             return
-
         if os.path.isfile(sys.argv[2]) == False:
             print("No plaintext file found for:", sys.argv[2])
             return
-
         if os.path.isfile(sys.argv[3]):
             print("Cannot encrypt. An encrypted file already exists")
             print("Delete", sys.argv[3], " to encrypt")
             return
-
         if os.path.isfile(sys.argv[4]) == False:
             print("Invalid public key path")
             return
@@ -174,20 +174,17 @@ def main():
 
     # Decryption mode
     elif mode == "d":
-
         if len(sys.argv) < 5:
             print("Invalid command arguments")
             print("python3 rsa.py d <encrypted file> <output file> <private key file>")
             return
-
         if os.path.isfile(sys.argv[2]) == False:
             print("Cannot decrypt. Need a valid encrypted file")
             return
-
         if os.path.isfile(sys.argv[4]) == False:
             print("Invalid private key path")
             return
-        
+
         decrypt(sys.argv[2], sys.argv[3], sys.argv[4])
 
     else:
