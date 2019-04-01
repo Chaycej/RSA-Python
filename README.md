@@ -1,8 +1,8 @@
 # RSA-Python
 
 # Author
-Chayce Heiberg
-Chayce.Heiberg@wsu.edu
+- Chayce Heiberg
+- Chayce.Heiberg@wsu.edu
 
 # About
 This a Python script that implements the RSA algorithm for encrypting/decrytping ascii text files.
