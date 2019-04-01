@@ -17,7 +17,7 @@ Encryption,
     $ Python3 rsa.py e <plaintext file path> <output file path> <public key file path>
 
 Decryption,
-    $ Python3 rsa.py d <enrypted file path> <output file path> <private key file path>
+    $ Python3 rsa.py d <encrypted file path> <output file path> <private key file path>
 
 # Archive
 
