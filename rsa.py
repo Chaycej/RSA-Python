@@ -107,12 +107,32 @@ def encrypt(plaintext_path, output_path, pubkey_path):
     output_file = open(output_path, "w")
     content = text_file.read()
 
-    for c in content:
+    i = 0
+    while i < len(content):
+        block = ""
+        block += format(ord(content[i]), "0>8b")
+        
+        if i+1 >= len(content):
+            block += "0"*8
+        else:
+            block += format(ord(content[i+1]), "0>8b")
+
+        if i+2 >= len(content):
+            block += "0"*8
+        else:
+            block += format(ord(content[i+2]), "0>8b")
+        
+        if i+3 >= len(content):
+            block += "0"*8
+        else:
+            block += format(ord(content[i+3]), "0>8b")
+
         k = random.randint(1, p-1)
         c1 = modexp(g, k, p)
-        c2 = (modexp(e2, k, p) * (ord(c) % p)) % p
+        c2 = (modexp(e2, k, p) * (int(block, 2) % p)) % p
         print("c1, c2 = ", c1, c2)
         output_file.write("{c1} {c2} ".format(c1=c1, c2=c2))
+        i += 4
 
 def decrypt(encrypted_path, output_path, privkey_path):
     privk_file = open(privkey_path, "r")
@@ -128,7 +148,29 @@ def decrypt(encrypted_path, output_path, privkey_path):
         c1 = int(content[index])
         c2 = int(content[index+1])
         m = (modexp(c1, p-1-d, p) * (c2 % p)) % p
-        retstr += chr(m)
+        bitstr = format(m, "0>32b")
+
+        s1 = int(bitstr[:8], 2)
+        s2 = int(bitstr[8:16], 2)
+        s3 = int(bitstr[16:24], 2)
+        s4 = int(bitstr[24:32], 2)
+
+        if s1 == 0:
+            break
+        retstr += chr(s1)
+
+        if s2 == 0:
+            break
+        retstr += chr(s2)
+
+        if s3 == 0:
+            break
+        retstr += chr(s3)
+
+        if s4 == 0:
+            break
+        retstr += chr(s4)
+        
         index += 2
 
     print(retstr)
