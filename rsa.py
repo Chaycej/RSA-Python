@@ -18,8 +18,7 @@ def modexp(a, b, c):
         table[i] = table[i-1] * a % c
 
     r = 1
-    digits = ndigits(b, base)
-    digits = digits[::-1]
+    digits = ndigits(b, base)[::-1]
 
     for digit in digits:
         for i in range(5):
@@ -191,6 +190,8 @@ def main():
         
         decrypt(sys.argv[2], sys.argv[3], sys.argv[4])
 
+    else:
+        print("Unknown rsa mode")
 
 if __name__ == "__main__":
     main()
