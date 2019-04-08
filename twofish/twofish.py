@@ -21,6 +21,38 @@ ftable =\
 0x08,0x77,0x11,0xbe,0x92,0x4f,0x24,0xc5,0x32,0x36,0x9d,0xcf,0xf3,0xa6,0xbb,0xac,\
 0x5e,0x6c,0xa9,0x13,0x57,0x25,0xb5,0xe3,0xbd,0xa8,0x3a,0x01,0x05,0x59,0x2a,0x46]
 
+
+def generate_keys(key, x, decrypt):
+    lst = []
+
+    if decrypt is True:
+        for i in range(4):
+            subkey, key = K_decrypt(4*x + i, key)
+            lst.append(subkey)
+
+        for i in range(4):
+            subkey, key = K_decrypt(4*x + i, key)
+            lst.append(subkey)
+
+        for i in range(4):
+            subkey, key = K_decrypt(4*x + i, key)
+            lst.append(subkey)
+
+        return lst[::-1], key
+    else:
+        for i in range(4):
+            subkey, key = K_encrypt(4*x + i, key)
+            lst.append(subkey)
+
+        for i in range(4):
+            subkey, key = K_encrypt(4*x + i, key)
+            lst.append(subkey)
+
+        for i in range(4):
+            subkey, key = K_encrypt(4*x + i, key)
+            lst.append(subkey)
+    return lst, key
+
 def get_key(key_file):
     key = key_file.readline()
     return format(int(key, 16), "0>64b")
@@ -34,9 +66,65 @@ def get_text(file):
     plain = "0"*(64-r) + plain
     return plain
 
+def whitening(block, key):
+    xor = []
+    xor.append(format(int(block[:16], 2) ^ int(key[:16], 2), "0>16b"))
+    xor.append(format(int(block[16:32], 2) ^ int(key[16:32], 2), "0>16b"))
+    xor.append(format(int(block[32:48], 2) ^ int(key[32:48], 2), "0>16b"))
+    xor.append(format(int(block[48:64], 2) ^ int(key[48:64], 2), "0>16b"))
+    return xor
+
+def F(r0, r1, round, key, decrypt=False):
+    keys, key = generate_keys(key, round, decrypt)
+
+    t0 = G(r0, keys[0:4])
+    t1 = G(r1, keys[4:])
+
+    f0 = (int(t0, 2) + 2 * int(t1, 2) + int(keys[8] + keys[9], 2)) % 2**16
+    f0 = format(f0, "0>16b")
+
+    f1 = (2 * int(t0, 2) + int(t1, 2) + int(keys[10] + keys[11], 2)) % 2**16
+    f1 = format(f1, "0>16b")
+    return f0, f1, key
+
+def encrypt_blocks(text, key):
+    res = ""
+
+    while len(text) != 0:
+        r0, r1, r2, r3 = whitening(text[:64], key)
+        round = 0
+
+        while round < 16:
+            f0, f1, key = F(r0, r1, round, key, False)
+            r0_temp = r0
+            r1_temp = r1
+
+            r0 = format(int(f0, 2) ^ int(r2, 2), "0>16b")
+            r0 = r0[len(r0)-1] + r0[:len(r0)-1]
+
+            r3_temp = r3[1:] + r3[:1]
+            r1 = format(int(r3_temp, 2) ^ int(f1, 2), "0>16b")
+
+            r3 = r1_temp
+            r2 = r0_temp
+            round += 1
+
+        res += format(int(r2, 2) ^ int(key[:16], 2), "0>16b")
+        res += format(int(r3, 2) ^ int(key[16:32], 2), "0>16b")
+        res += format(int(r0, 2) ^ int(key[32:48], 2), "0>16b")
+        res += format(int(r1, 2) ^ int(key[48:64], 2), "0>16b")
+        text = text[64:]
+    return res
+
 def encrypt(text_file, key, output_file):
     text = get_text()
+    text_file.close()
+    if text is None or len(text) == 0:
+        return
 
+    cipher = encrypt_blocks(text, key)
+    output_file.write(format(int(cipher, 2), "x"))
+    output_file.close()
 
 def main():
     if len(sys.argv) < 2:
