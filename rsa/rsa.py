@@ -130,7 +130,7 @@ def encrypt(plaintext_path, output_path, pubkey_path):
         k = random.randint(1, p-1)
         c1 = modexp(g, k, p)
         c2 = (modexp(e2, k, p) * (int(block, 2) % p)) % p
-        print("c1, c2 = ", c1, c2)
+        #print("c1, c2 = ", c1, c2)
         output_file.write("{c1} {c2} ".format(c1=c1, c2=c2))
         i += 4
 
@@ -170,7 +170,7 @@ def decrypt(encrypted_path, output_path, privkey_path):
         if s4 == 0:
             break
         retstr += chr(s4)
-        
+
         index += 2
 
     print(retstr)
